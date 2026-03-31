@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samurai Nutrition | مكملات رياضية</title>
+    
+    <!-- Google Fonts (Arabic Supported) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        samurai: {
+                            bg: '#F9FAFB', // Light Gray/White
+                            card: '#FFFFFF', // Pure White
+                            gold: '#D4AF37', // Premium Gold
+                            goldHover: '#B5952F',
+                            dark: '#111827', // Dark Gray for text
+                            border: '#E5E7EB'
+                        }
+                    },
+                    fontFamily: {
+                        heading: ['Cairo', 'sans-serif'],
+                        body: ['Cairo', 'sans-serif'],
+                        en: ['Oswald', 'sans-serif'] // For English brand names
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Styles & Scrollbar */
+        body {
+            background-color: #F9FAFB;
+            color: #111827;
+            font-family: 'Cairo', sans-serif;
+            overflow-x: hidden;
+        }
+        .font-en { font-family: 'Oswald', sans-serif; }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #F3F4F6; }
+        ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #D4AF37; }
+
+        /* Glassmorphism & Utilities */
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #E5E7EB;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(12px);
+        }
+        
+        /* Animations */
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Slide in from Left for RTL */
+        .slide-in-left { transform: translateX(-100%); transition: transform 0.3s ease-in-out; }
+        .slide-in-left.open { transform: translateX(0); }
+
+        .modal-overlay { opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .modal-overlay.open { opacity: 1; pointer-events: auto; }
+        .modal-content { transform: scale(0.95); transition: transform 0.3s ease; }
+        .modal-overlay.open .modal-content { transform: scale(1); }
+
+        /* Stock Status Styles */
+        .card-out-of-stock { opacity: 0.6; filter: grayscale(100%); }
+        
+        /* Loader */
+        .skeleton {
+            background: linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* Metallic Logo Styles */
+        .logo-samurai {
+            color: #2C5A71;
+            text-shadow:
+                -1px -1px 0 #A37B2C,
+                 1px -1px 0 #A37B2C,
+                -1px  1px 0 #A37B2C,
+                 1px  1px 0 #A37B2C,
+                 0 0 6px rgba(163, 123, 44, 0.4);
+            letter-spacing: 0.1em;
+        }
+        .logo-nutrition {
+            background: linear-gradient(to bottom, #E5C773, #A37B2C);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 1px 2px rgba(163, 123, 44, 0.5));
+            letter-spacing: 0.15em;
+            font-size: 0.85em;
+        }
+    </style>
+</head>
+<body class="antialiased flex flex-col min-h-screen">
+
+    <!-- ═══════════════════════════════════════════════
+         NAVBAR
+    ═══════════════════════════════════════════════ -->
+    <nav class="glass-nav fixed w-full z-40 top-0 transition-all duration-300 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+
+                <!-- Back Button -->
+                <button id="btn-back" class="hidden text-gray-500 hover:text-samurai-gold transition" onclick="App.goHome()">
+                    <i class="fas fa-arrow-right text-xl"></i>
+                </button>
+
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center cursor-pointer mx-auto sm:mx-0" onclick="App.goHome()">
+                    <img src="images/logo.png" alt="Samurai Nutrition Logo" class="h-12 w-auto object-contain mr-3">
+                    <h1 class="flex flex-col leading-none font-en font-bold uppercase">
+                        <span class="logo-samurai text-3xl">SAMURAI</span>
+                        <span class="logo-nutrition text-3xl">NUTRITION</span>
+                    </h1>
+                </div>
+
+                <!-- Icons (Search & Cart) -->
+                <div class="flex items-center gap-4 relative">
+                    <!-- Search -->
+                    <div class="relative flex items-center">
+                        <input type="text" id="search-input" onkeyup="App.handleSearch(this.value)" class="hidden absolute left-8 w-48 sm:w-64 bg-white border border-gray-300 rounded-full px-4 py-1 text-sm focus:outline-none focus:border-samurai-gold transition-all shadow-sm" placeholder="ابحث عن منتج...">
+                        <button onclick="App.toggleSearch()" class="p-2 text-gray-600 hover:text-samurai-gold transition z-10 bg-white rounded-full">
+                            <i class="fas fa-search text-xl"></i>
+                        </button>
+                        <!-- Search Results Dropdown -->
+                        <div id="search-results" class="hidden absolute top-full mt-3 left-0 w-64 sm:w-80 bg-white shadow-xl rounded-lg border border-gray-100 overflow-hidden z-50 max-h-80 overflow-y-auto">
+                            <!-- Results injected here -->
+                        </div>
+                    </div>
+
+                    <!-- Cart -->
+                    <button onclick="App.toggleCart()" class="relative p-2 text-gray-600 hover:text-samurai-gold transition">
+                        <i class="fas fa-shopping-bag text-2xl"></i>
+                        <span id="cart-badge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full transform translate-x-1/4 -translate-y-1/4 hidden shadow-sm">0</span>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow pt-20 pb-12">
+
+        <!-- ═══════════════════════════════════════════════
+             HERO SECTION — clean image, no overlays, no text
+        ═══════════════════════════════════════════════ -->
+        <div id="hero-section" class="relative w-full h-64 sm:h-80 overflow-hidden border-b border-samurai-gold/20">
+            <img src="images/hero.jpg" alt="Hero Background" class="w-full h-full object-cover">
+        </div>
+
+        <!-- Dynamic Container -->
+        <div id="app-container" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
+            <!-- Content injected by JS -->
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-10 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <h3 class="text-2xl font-bold text-samurai-dark mb-4 font-en uppercase">SAMURAI <span class="text-samurai-gold">NUTRITION</span></h3>
+            <div class="flex justify-center space-x-6 space-x-reverse mb-6">
+                <a href="#" id="footer-fb" target="_blank" class="text-gray-500 hover:text-[#1877F2] text-3xl transition"><i class="fab fa-facebook"></i></a>
+                <a href="#" id="footer-ig" target="_blank" class="text-gray-500 hover:text-[#E1306C] text-3xl transition"><i class="fab fa-instagram"></i></a>
+                <a href="#" id="footer-wa" target="_blank" class="text-gray-500 hover:text-[#25D366] text-3xl transition"><i class="fab fa-whatsapp"></i></a>
+            </div>
+            <p class="text-gray-500 text-sm font-semibold">&copy; <span id="year"></span> Samurai Nutrition. جميع الحقوق محفوظة.</p>
+        </div>
+    </footer>
+
+    <!-- Cart Sidebar -->
+    <div id="cart-sidebar" class="fixed inset-y-0 left-0 w-full sm:w-96 glass-panel z-50 slide-in-left shadow-2xl border-r border-gray-200 flex flex-col">
+        <div class="p-5 border-b border-gray-200 flex justify-between items-center bg-white">
+            <h2 class="text-xl font-bold text-samurai-dark"><i class="fas fa-shopping-bag text-samurai-gold ml-2"></i> سلة المشتريات</h2>
+            <button onclick="App.toggleCart()" class="text-gray-400 hover:text-red-500 transition"><i class="fas fa-times text-2xl"></i></button>
+        </div>
+        <div id="cart-items" class="flex-grow overflow-y-auto p-4 space-y-4 bg-gray-50">
+            <!-- Cart items injected here -->
+        </div>
+        <div class="p-5 border-t border-gray-200 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-gray-600 font-bold">المجموع الفرعي:</span>
+                <span id="cart-total" class="text-2xl font-bold text-samurai-dark font-en">0 DA</span>
+            </div>
+            <button onclick="App.openCheckout()" id="btn-checkout" class="w-full bg-samurai-gold text-white font-bold py-3 rounded-lg hover:bg-samurai-goldHover transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-lg">
+                تأكيد الطلب
+            </button>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    <div id="product-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-overlay bg-gray-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto modal-content shadow-2xl flex flex-col md:flex-row relative">
+            <button onclick="App.closeModal('product-modal')" class="absolute top-4 left-4 text-gray-400 hover:text-red-500 z-10 bg-gray-100 rounded-full w-10 h-10 flex items-center justify-center transition"><i class="fas fa-times text-xl"></i></button>
+            
+            <div class="w-full md:w-1/2 bg-gray-50 p-8 flex items-center justify-center min-h-[300px] border-b md:border-b-0 md:border-l border-gray-200">
+                <div id="modal-img-container" class="w-full h-full flex items-center justify-center"></div>
+            </div>
+            
+            <div class="w-full md:w-1/2 p-6 md:p-10 flex flex-col justify-center">
+                <div id="modal-badge" class="mb-4"></div>
+                <h2 id="modal-title" class="text-2xl md:text-3xl font-bold text-samurai-dark mb-2 font-en"></h2>
+                <p id="modal-subcat" class="text-samurai-gold text-sm font-bold uppercase tracking-wider mb-4 font-en"></p>
+                <p id="modal-price" class="text-3xl font-bold text-samurai-dark mb-6 font-en"></p>
+                
+                <div class="mb-8 bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    <h4 class="text-gray-800 font-bold mb-2"><i class="fas fa-info-circle text-samurai-gold ml-1"></i> الوصف</h4>
+                    <p class="text-gray-600 text-sm leading-relaxed">تركيبة متطورة مصممة لزيادة نتائجك إلى أقصى حد. جودة ممتازة مضمونة من Samurai Nutrition.</p>
+                </div>
+
+                <button id="modal-add-btn" class="w-full bg-samurai-gold text-white font-bold py-4 rounded-lg hover:bg-samurai-goldHover transition shadow-lg flex items-center justify-center gap-3 text-lg">
+                    <i class="fas fa-cart-plus"></i> أضف إلى السلة
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Checkout Modal (Detailed & Dynamic) -->
+    <div id="checkout-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-overlay bg-gray-900/70 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl max-w-5xl w-full max-h-[95vh] overflow-y-auto modal-content shadow-2xl relative">
+            <button onclick="App.closeModal('checkout-modal')" class="absolute top-4 left-4 text-gray-400 hover:text-red-500 z-10 bg-gray-100 rounded-full w-10 h-10 flex items-center justify-center transition"><i class="fas fa-times text-xl"></i></button>
+            
+            <div class="p-6 md:p-8">
+                <h2 class="text-3xl font-bold text-samurai-dark mb-6 border-b border-gray-200 pb-4"><i class="fas fa-clipboard-check text-samurai-gold ml-2"></i> إتمام الطلب</h2>
+                
+                <form id="checkout-form" onsubmit="App.submitCheckout(event)" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    
+                    <!-- Right Side: Form Fields -->
+                    <div class="lg:col-span-7 space-y-5">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">معلومات التوصيل</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2">اللقب *</label>
+                                <input type="text" id="co-nom" required class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-samurai-gold focus:border-transparent transition">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2">الاسم *</label>
+                                <input type="text" id="co-prenom" required class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-samurai-gold focus:border-transparent transition">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">رقم الهاتف *</label>
+                            <input type="tel" id="co-tel" required placeholder="05xx xx xx xx" dir="ltr" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-samurai-gold focus:border-transparent transition text-right">
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2">الولاية *</label>
+                                <select id="co-wilaya" required onchange="App.populateCommunes()" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-samurai-gold focus:border-transparent transition">
+                                    <option value="">اختر الولاية...</option>
+                                    <!-- Populated by JS -->
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2">البلدية *</label>
+                                <select id="co-commune" required class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-samurai-gold focus:border-transparent transition disabled:opacity-50">
+                                    <option value="">اختر البلدية...</option>
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">العنوان الكامل *</label>
+                            <textarea id="co-adresse" required rows="2" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-samurai-gold focus:border-transparent transition"></textarea>
+                        </div>
+
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <label class="block text-gray-800 text-md font-bold mb-3">نوع التوصيل *</label>
+                            <div class="flex flex-col sm:flex-row gap-4">
+                                <label class="flex items-center cursor-pointer bg-white p-3 rounded border border-gray-200 flex-1 hover:border-samurai-gold transition">
+                                    <input type="radio" name="livraison" value="home" checked onchange="App.updateCheckoutTotals()" class="w-5 h-5 text-samurai-gold focus:ring-samurai-gold border-gray-300">
+                                    <span class="mr-3 text-gray-800 font-semibold">توصيل للمنزل</span>
+                                </label>
+                                <label class="flex items-center cursor-pointer bg-white p-3 rounded border border-gray-200 flex-1 hover:border-samurai-gold transition">
+                                    <input type="radio" name="livraison" value="desk" onchange="App.updateCheckoutTotals()" class="w-5 h-5 text-samurai-gold focus:ring-samurai-gold border-gray-300">
+                                    <span class="mr-3 text-gray-800 font-semibold">مكتب التوصيل (Stop Desk)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Left Side: Order Details & Totals -->
+                    <div class="lg:col-span-5 bg-gray-50 p-6 rounded-xl border border-gray-200 flex flex-col h-full">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">تفاصيل طلبك</h3>
+                        
+                        <!-- Inline Cart Items -->
+                        <div id="checkout-cart-items" class="flex-grow overflow-y-auto space-y-3 mb-6 max-h-64 pr-2">
+                            <!-- Injected by JS -->
+                        </div>
+
+                        <!-- Totals -->
+                        <div class="border-t border-gray-200 pt-4 space-y-3">
+                            <div class="flex justify-between text-gray-600">
+                                <span>المجموع الفرعي:</span>
+                                <span id="checkout-subtotal" class="font-bold font-en">0 DA</span>
+                            </div>
+                            <div class="flex justify-between text-gray-600">
+                                <span>تكلفة التوصيل:</span>
+                                <span id="checkout-delivery-cost" class="font-bold font-en text-green-600">+0 DA</span>
+                            </div>
+                            <div class="flex justify-between text-xl font-bold text-samurai-dark pt-2 border-t border-gray-200 mt-2">
+                                <span>المجموع النهائي:</span>
+                                <span id="checkout-final-total" class="font-en text-samurai-gold">0 DA</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-6">
+                            <button type="submit" class="w-full bg-[#25D366] text-white font-bold py-4 rounded-lg hover:bg-[#128C7E] transition shadow-lg flex justify-center items-center gap-3 text-lg">
+                                <i class="fab fa-whatsapp text-2xl"></i> إرسال الطلب عبر واتساب
+                            </button>
+                            <p class="text-center text-gray-500 text-xs mt-3"><i class="fas fa-lock text-gray-400 ml-1"></i> معلوماتك آمنة. سيتم تحويلك لتأكيد الطلب.</p>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // ==========================================
+        // 1. CONFIGURATION GLOBALE
+        // ==========================================
+        const SITE_CONFIG = {
+            phone: "0779186128",
+            whatsapp: "213779186128", // Format international pour l'URL
+            facebook: "https://www.facebook.com/profile.php?id=100063894531867",
+            instagram: "https://www.instagram.com/haidar_samuraijr?igsh=dmRxYzlqaGxmNjB2",
+            currency: "DA",
+            imgPlaceholder: "https://placehold.co/400x400/F9FAFB/D4AF37?text=SAMURAI",
+            deliveryHome: 600,
+            deliveryDesk: 400
+        };
+
+        // Set Footer Links & Year
+        document.getElementById('footer-fb').href = SITE_CONFIG.facebook;
+        document.getElementById('footer-ig').href = SITE_CONFIG.instagram;
+        document.getElementById('footer-wa').href = `https://wa.me/${SITE_CONFIG.whatsapp}`;
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        // ==========================================
+        // 2. MOCK DATABASE API
+        // ==========================================
+        const MockDB = {
+            categories: [
+                { id: 'packs', name: 'باقات (Packs)', icon: 'fa-box-open' },
+                { id: 'proteins', name: 'بروتينات', icon: 'fa-drumstick-bite' },
+                { id: 'mass_gainers', name: 'ضخامة (Gainers)', icon: 'fa-weight-hanging' },
+                { id: 'creatines', name: 'كرياتين', icon: 'fa-bolt' },
+                { id: 'pre_workout', name: 'طاقة (Pre-Workout)', icon: 'fa-fire' },
+                { id: 'vitamins', name: 'فيتامينات', icon: 'fa-pills' },
+                { id: 'fat_burner', name: 'حوارق الدهون', icon: 'fa-fire-flame-curved' },
+                { id: 'boosters', name: 'محفزات', icon: 'fa-rocket' },
+                { id: 'collagen', name: 'كولاجين', icon: 'fa-bone' },
+                { id: 'amino', name: 'أحماض أمينية', icon: 'fa-dna' },
+                { id: 'drinks', name: 'مشروبات', icon: 'fa-bottle-water' }
+            ],
+            subCategories: {
+                'proteins': ['Whey Isolate', 'Whey Hydro', 'Whey Concentrate', 'Casein']
+            },
+            products: [
+                { id: 101, catId: 'proteins', subCat: 'Whey Isolate', name: 'Samurai Isolate 100% 2kg', price: 16500, image: 'https://placehold.co/400x400/FFFFFF/111827?text=Isolate', stock: 'in_stock' },
+                { id: 102, catId: 'proteins', subCat: 'Whey Hydro', name: 'Hydrolyzed Gold 1.5kg', price: 18000, image: 'https://placehold.co/400x400/FFFFFF/111827?text=Hydro', stock: 'in_stock' },
+                { id: 103, catId: 'proteins', subCat: 'Whey Concentrate', name: 'Basic Whey 2kg', price: 12000, image: 'https://placehold.co/400x400/FFFFFF/111827?text=Whey', stock: 'out_of_stock' },
+                { id: 104, catId: 'proteins', subCat: 'Casein', name: 'Night Casein 1kg', price: 9500, image: 'https://placehold.co/400x400/FFFFFF/111827?text=Casein', stock: 'coming_soon' },
+                { id: 201, catId: 'creatines', name: 'Creatine Monohydrate 300g', price: 4500, image: 'https://placehold.co/400x400/FFFFFF/111827?text=Creatine', stock: 'in_stock' },
+                { id: 202, catId: 'creatines', name: 'Creatine HCL 200g', price: 5500, image: 'invalid-image.jpg', stock: 'in_stock' }, 
+                { id: 301, catId: 'pre_workout', name: 'Katana Pre-Workout 30 serv', price: 6500, image: 'https://placehold.co/400x400/FFFFFF/111827?text=PreWorkout', stock: 'in_stock' },
+                { id: 401, catId: 'mass_gainers', name: 'Sumo Mass Gainer 5kg', price: 14000, image: 'https://placehold.co/400x400/FFFFFF/111827?text=Gainer', stock: 'in_stock' },
+                { id: 501, catId: 'packs', name: 'Pack Débutant (Whey + Creatine)', price: 15500, image: 'https://placehold.co/400x400/FFFFFF/111827?text=Pack', stock: 'in_stock' }
+            ]
+        };
+
+        // 58 Wilayas Data (Sample Communes for demonstration)
+        const ALGERIA_DATA = [
+            { id: 1, name: "01 - أدرار", communes: ["أدرار", "تمنطيط", "فنوغيل", "رقان"] },
+            { id: 2, name: "02 - الشلف", communes: ["الشلف", "تنس", "الوقاد", "بوقادير"] },
+            { id: 9, name: "09 - البليدة", communes: ["البليدة", "بوفاريك", "أولاد يعيش", "موزاية"] },
+            { id: 16, name: "16 - الجزائر", communes: ["الجزائر الوسطى", "سيدي امحمد", "باب الوادي", "رويبة", "الشراقة"] },
+            { id: 25, name: "25 - قسنطينة", communes: ["قسنطينة", "الخروب", "عين سمارة", "حامة بوزيان"] },
+            { id: 31, name: "31 - وهران", communes: ["وهران", "بئر الجير", "السانية", "أرزيو"] },
+            // Fallback generator for the rest to meet the 58 requirement without bloating code
+        ];
+        
+        // Generate remaining wilayas dynamically for the demo
+        const wilayaNames = ["الأغواط","أم البواقي","باتنة","بجاية","بسكرة","بشار","البويرة","تمنراست","تبسة","تلمسان","تيارت","تيزي وزو","الجلفة","جيجل","سطيف","سعيدة","سكيكدة","سيدي بلعباس","عنابة","قالمة","المدية","مستغانم","المسيلة","معسكر","ورقلة","البيض","إليزي","برج بوعريريج","بومرداس","الطارف","تندوف","تيسمسيلت","الوادي","خنشلة","سوق أهراس","تيبازة","ميلة","عين الدفلى","النعامة","عين تموشنت","غرداية","غليزان","تيميمون","برج باجي مختار","أولاد جلال","بني عباس","إن صالح","إن قزام","تقرت","جانت","المغير","المنيعة"];
+        
+        for(let i=3; i<=58; i++) {
+            if(!ALGERIA_DATA.find(w => w.id === i)) {
+                let wName = wilayaNames.shift() || `ولاية ${i}`;
+                let prefix = i < 10 ? `0${i}` : i;
+                ALGERIA_DATA.push({ id: i, name: `${prefix} - ${wName}`, communes: [`بلدية مركز ${wName}`, `بلدية 2`, `بلدية 3`] });
+            }
+        }
+        ALGERIA_DATA.sort((a, b) => a.id - b.id);
+
+        // ==========================================
+        // 3. STATE MANAGEMENT
+        // ==========================================
+        const State = {
+            cart: JSON.parse(localStorage.getItem('samurai_cart')) || [],
+            currentCategory: null,
+            filters: { subCat: 'all', price: 'all' }
+        };
+
+        // ==========================================
+        // 4. CORE APPLICATION LOGIC
+        // ==========================================
+        const App = {
+            init: () => {
+                App.updateCartBadge();
+                App.renderHome();
+                
+                // Close search on outside click
+                document.addEventListener('click', (e) => {
+                    if(!e.target.closest('#search-input') && !e.target.closest('button[onclick="App.toggleSearch()"]') && !e.target.closest('#search-results')) {
+                        document.getElementById('search-results').classList.add('hidden');
+                        document.getElementById('search-input').classList.add('hidden');
+                    }
+                });
+            },
+
+            // --- Navigation & Views ---
+            goHome: () => {
+                State.currentCategory = null;
+                document.getElementById('hero-section').style.display = 'block';
+                document.getElementById('btn-back').classList.add('hidden');
+                App.renderHome();
+            },
+
+            renderHome: () => {
+                const container = document.getElementById('app-container');
+                let html = `<h2 class="text-3xl font-bold text-samurai-dark mb-8 text-center border-b border-gray-200 pb-4">تصفح الأقسام</h2>`;
+                html += `<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">`;
+                
+                MockDB.categories.forEach(cat => {
+                    html += `
+                        <div onclick="App.openCategory('${cat.id}')" class="bg-white border border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:border-samurai-gold hover:shadow-lg transition-all group fade-in">
+                            <div class="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-4 group-hover:bg-samurai-gold/10 transition-colors">
+                                <i class="fas ${cat.icon} text-3xl text-gray-400 group-hover:text-samurai-gold transition-colors"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-800 text-center">${cat.name}</h3>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+                container.innerHTML = html;
+            },
+
+            openCategory: (catId) => {
+                State.currentCategory = catId;
+                State.filters = { subCat: 'all', price: 'all' };
+                document.getElementById('hero-section').style.display = 'none';
+                document.getElementById('btn-back').classList.remove('hidden');
+                
+                const category = MockDB.categories.find(c => c.id === catId);
+                const hasSubCats = MockDB.subCategories[catId] && MockDB.subCategories[catId].length > 0;
+
+                const container = document.getElementById('app-container');
+                
+                let html = `
+                    <div class="flex flex-col md:flex-row gap-8 fade-in">
+                        <!-- Sidebar Filters -->
+                        <aside class="w-full md:w-64 flex-shrink-0">
+                            <div class="bg-white border border-gray-200 rounded-xl p-5 sticky top-24 shadow-sm">
+                                <h3 class="text-xl font-bold text-samurai-dark mb-4 border-b border-gray-100 pb-2"><i class="fas fa-filter text-samurai-gold ml-2"></i> تصفية</h3>
+                                
+                                ${hasSubCats ? `
+                                <div class="mb-6">
+                                    <h4 class="text-gray-800 font-bold mb-3 text-sm">الفئات الفرعية</h4>
+                                    <div class="space-y-2">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="subcat" value="all" checked onchange="App.updateFilter('subCat', 'all')" class="w-4 h-4 text-samurai-gold focus:ring-samurai-gold border-gray-300">
+                                            <span class="mr-2 text-gray-600 text-sm font-en">الكل</span>
+                                        </label>
+                                        ${MockDB.subCategories[catId].map(sub => `
+                                            <label class="flex items-center cursor-pointer">
+                                                <input type="radio" name="subcat" value="${sub}" onchange="App.updateFilter('subCat', '${sub}')" class="w-4 h-4 text-samurai-gold focus:ring-samurai-gold border-gray-300">
+                                                <span class="mr-2 text-gray-600 text-sm font-en">${sub}</span>
+                                            </label>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                ` : ''}
+
+                                <div>
+                                    <h4 class="text-gray-800 font-bold mb-3 text-sm">السعر (${SITE_CONFIG.currency})</h4>
+                                    <div class="space-y-2">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="price" value="all" checked onchange="App.updateFilter('price', 'all')" class="w-4 h-4 text-samurai-gold focus:ring-samurai-gold border-gray-300">
+                                            <span class="mr-2 text-gray-600 text-sm">كل الأسعار</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="price" value="0-5000" onchange="App.updateFilter('price', '0-5000')" class="w-4 h-4 text-samurai-gold focus:ring-samurai-gold border-gray-300">
+                                            <span class="mr-2 text-gray-600 text-sm font-en">0 - 5,000</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="price" value="5000-10000" onchange="App.updateFilter('price', '5000-10000')" class="w-4 h-4 text-samurai-gold focus:ring-samurai-gold border-gray-300">
+                                            <span class="mr-2 text-gray-600 text-sm font-en">5,000 - 10,000</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="price" value="10000-20000" onchange="App.updateFilter('price', '10000-20000')" class="w-4 h-4 text-samurai-gold focus:ring-samurai-gold border-gray-300">
+                                            <span class="mr-2 text-gray-600 text-sm font-en">10,000 - 20,000</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="price" value="20000+" onchange="App.updateFilter('price', '20000+')" class="w-4 h-4 text-samurai-gold focus:ring-samurai-gold border-gray-300">
+                                            <span class="mr-2 text-gray-600 text-sm font-en">20,000 +</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </aside>
+
+                        <!-- Product Grid -->
+                        <div class="flex-grow">
+                            <h2 class="text-3xl font-bold text-samurai-dark mb-6 flex items-center gap-3">
+                                <i class="fas ${category.icon} text-samurai-gold"></i> ${category.name}
+                            </h2>
+                            <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <!-- Products injected here -->
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML = html;
+                App.renderProducts();
+            },
+
+            updateFilter: (type, value) => {
+                State.filters[type] = value;
+                App.renderProducts();
+            },
+
+            renderProducts: () => {
+                const grid = document.getElementById('product-grid');
+                grid.innerHTML = `<div class="col-span-full h-32 skeleton rounded-xl"></div>`;
+
+                setTimeout(() => {
+                    let products = MockDB.products.filter(p => p.catId === State.currentCategory);
+
+                    if (State.filters.subCat !== 'all') {
+                        products = products.filter(p => p.subCat === State.filters.subCat);
+                    }
+
+                    if (State.filters.price !== 'all') {
+                        products = products.filter(p => {
+                            if (State.filters.price === '0-5000') return p.price <= 5000;
+                            if (State.filters.price === '5000-10000') return p.price > 5000 && p.price <= 10000;
+                            if (State.filters.price === '10000-20000') return p.price > 10000 && p.price <= 20000;
+                            if (State.filters.price === '20000+') return p.price > 20000;
+                            return true;
+                        });
+                    }
+
+                    if (products.length === 0) {
+                        grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-400"><i class="fas fa-box-open text-5xl mb-4"></i><p class="text-lg">لا توجد منتجات تطابق بحثك.</p></div>`;
+                        return;
+                    }
+
+                    grid.innerHTML = products.map(p => App.createProductCard(p)).join('');
+                }, 300);
+            },
+
+            createProductCard: (product) => {
+                let badgeHtml = '';
+                let btnHtml = '';
+                let cardClass = 'bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col transition-all hover:shadow-lg hover:border-samurai-gold/50';
+                
+                const imgErrorStr = `this.onerror=null; this.outerHTML='<div class=\\'w-full h-48 bg-gray-50 flex items-center justify-center text-gray-300\\'><i class=\\'fas fa-image fa-3x\\'></i></div>'`;
+
+                if (product.stock === 'in_stock') {
+                    badgeHtml = `<span class="absolute top-3 right-3 bg-green-100 text-green-700 border border-green-200 text-xs font-bold px-2 py-1 rounded">متوفر</span>`;
+                    btnHtml = `<button onclick="App.addToCart(${product.id}, event)" class="w-full bg-samurai-gold text-white font-bold py-3 hover:bg-samurai-goldHover transition text-sm"><i class="fas fa-cart-plus ml-1"></i> أضف للسلة</button>`;
+                } else if (product.stock === 'out_of_stock') {
+                    cardClass += ' card-out-of-stock';
+                    badgeHtml = `<span class="absolute top-3 right-3 bg-red-100 text-red-700 border border-red-200 text-xs font-bold px-2 py-1 rounded">نفد</span>`;
+                    btnHtml = `<button disabled class="w-full bg-gray-200 text-gray-500 font-bold py-3 cursor-not-allowed text-sm">نفد من المخزون</button>`;
+                } else if (product.stock === 'coming_soon') {
+                    badgeHtml = `<span class="absolute top-3 right-3 bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold px-2 py-1 rounded">قريباً</span>`;
+                    btnHtml = `<button disabled class="w-full bg-gray-200 text-gray-500 font-bold py-3 cursor-not-allowed text-sm">قريباً</button>`;
+                }
+
+                return `
+                    <div class="${cardClass} fade-in cursor-pointer" onclick="App.openProductModal(${product.id})">
+                        <div class="relative h-56 bg-white p-4 flex items-center justify-center border-b border-gray-100">
+                            ${badgeHtml}
+                            <img src="${product.image}" alt="${product.name}" class="max-h-full object-contain mix-blend-multiply" onerror="${imgErrorStr}">
+                        </div>
+                        <div class="p-5 flex-grow flex flex-col justify-between">
+                            <div>
+                                ${product.subCat ? `<p class="text-samurai-gold text-xs font-bold uppercase mb-2 font-en">${product.subCat}</p>` : ''}
+                                <h3 class="text-gray-900 font-bold text-md mb-2 line-clamp-2 font-en" dir="ltr">${product.name}</h3>
+                            </div>
+                            <p class="text-2xl font-bold text-samurai-dark mt-3 font-en">${product.price.toLocaleString()} ${SITE_CONFIG.currency}</p>
+                        </div>
+                        <div class="mt-auto" onclick="event.stopPropagation()">
+                            ${btnHtml}
+                        </div>
+                    </div>
+                `;
+            },
+
+            // --- Search Logic ---
+            toggleSearch: () => {
+                const input = document.getElementById('search-input');
+                input.classList.toggle('hidden');
+                if(!input.classList.contains('hidden')) {
+                    input.focus();
+                } else {
+                    document.getElementById('search-results').classList.add('hidden');
+                }
+            },
+
+            handleSearch: (query) => {
+                const container = document.getElementById('search-results');
+                if(query.trim().length < 2) { 
+                    container.classList.add('hidden'); 
+                    return; 
+                }
+                
+                const q = query.toLowerCase();
+                const results = MockDB.products.filter(p => 
+                    p.name.toLowerCase().includes(q) || 
+                    (p.subCat && p.subCat.toLowerCase().includes(q))
+                );
+                
+                if(results.length === 0) {
+                    container.innerHTML = '<div class="p-4 text-center text-gray-500 text-sm">لا توجد نتائج مطابقة</div>';
+                } else {
+                    const imgErrorStr = `this.onerror=null; this.src='${SITE_CONFIG.imgPlaceholder}'`;
+                    container.innerHTML = results.map(p => {
+                        const catName = MockDB.categories.find(c => c.id === p.catId)?.name || '';
+                        return `
+                        <div class="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition" onclick="App.openProductModal(${p.id}); document.getElementById('search-results').classList.add('hidden'); document.getElementById('search-input').classList.add('hidden');">
+                            <div class="w-12 h-12 bg-white rounded border border-gray-200 flex items-center justify-center flex-shrink-0 p-1">
+                                <img src="${p.image}" class="max-h-full object-contain mix-blend-multiply" onerror="${imgErrorStr}">
+                            </div>
+                            <div class="flex-grow">
+                                <div class="text-sm font-bold text-gray-900 line-clamp-1 font-en" dir="ltr">${p.name}</div>
+                                <div class="text-xs text-samurai-gold">${catName}</div>
+                            </div>
+                        </div>
+                    `}).join('');
+                }
+                container.classList.remove('hidden');
+            },
+
+            // --- Modals ---
+            openProductModal: (id) => {
+                const product = MockDB.products.find(p => p.id === id);
+                if(!product) return;
+
+                const imgErrorStr = `this.onerror=null; this.outerHTML='<div class=\\'w-full h-64 flex items-center justify-center text-gray-300\\'><i class=\\'fas fa-image fa-5x\\'></i></div>'`;
+                
+                document.getElementById('modal-img-container').innerHTML = `<img src="${product.image}" alt="${product.name}" class="max-h-72 object-contain mix-blend-multiply drop-shadow-xl" onerror="${imgErrorStr}">`;
+                document.getElementById('modal-title').textContent = product.name;
+                document.getElementById('modal-title').setAttribute('dir', 'ltr');
+                document.getElementById('modal-subcat').textContent = product.subCat || '';
+                document.getElementById('modal-price').textContent = `${product.price.toLocaleString()} ${SITE_CONFIG.currency}`;
+                
+                const badgeContainer = document.getElementById('modal-badge');
+                const addBtn = document.getElementById('modal-add-btn');
+
+                if (product.stock === 'in_stock') {
+                    badgeContainer.innerHTML = `<span class="bg-green-100 text-green-700 border border-green-200 text-xs font-bold px-3 py-1 rounded-full">متوفر في المخزون</span>`;
+                    addBtn.disabled = false;
+                    addBtn.className = "w-full bg-samurai-gold text-white font-bold py-4 rounded-lg hover:bg-samurai-goldHover transition shadow-lg flex items-center justify-center gap-3 text-lg";
+                    addBtn.innerHTML = `<i class="fas fa-cart-plus"></i> أضف إلى السلة`;
+                    addBtn.onclick = () => { App.addToCart(product.id); App.closeModal('product-modal'); };
+                } else if (product.stock === 'out_of_stock') {
+                    badgeContainer.innerHTML = `<span class="bg-red-100 text-red-700 border border-red-200 text-xs font-bold px-3 py-1 rounded-full">نفد من المخزون</span>`;
+                    addBtn.disabled = true;
+                    addBtn.className = "w-full bg-gray-300 text-gray-500 font-bold py-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-3 text-lg";
+                    addBtn.innerHTML = `<i class="fas fa-ban"></i> نفد`;
+                } else {
+                    badgeContainer.innerHTML = `<span class="bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold px-3 py-1 rounded-full">قريباً</span>`;
+                    addBtn.disabled = true;
+                    addBtn.className = "w-full bg-gray-300 text-gray-500 font-bold py-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-3 text-lg";
+                    addBtn.innerHTML = `<i class="fas fa-clock"></i> قريباً`;
+                }
+
+                document.getElementById('product-modal').classList.add('open');
+            },
+
+            closeModal: (id) => {
+                document.getElementById(id).classList.remove('open');
+            },
+
+            // --- Cart Logic ---
+            toggleCart: () => {
+                const cart = document.getElementById('cart-sidebar');
+                cart.classList.toggle('open');
+                if(cart.classList.contains('open')) {
+                    App.renderCartItems();
+                }
+            },
+
+            addToCart: (id, event) => {
+                if(event) event.stopPropagation();
+                const product = MockDB.products.find(p => p.id === id);
+                if(!product || product.stock !== 'in_stock') return;
+
+                const existingItem = State.cart.find(item => item.id === id);
+                if (existingItem) {
+                    existingItem.qty += 1;
+                } else {
+                    State.cart.push({ ...product, qty: 1 });
+                }
+                
+                App.saveCart();
+                App.updateCartBadge();
+                
+                const badge = document.getElementById('cart-badge');
+                badge.classList.add('scale-150');
+                setTimeout(() => badge.classList.remove('scale-150'), 200);
+            },
+
+            updateQty: (id, delta) => {
+                const item = State.cart.find(i => i.id === id);
+                if(item) {
+                    item.qty += delta;
+                    if(item.qty <= 0) {
+                        State.cart = State.cart.filter(i => i.id !== id);
+                    }
+                    App.saveCart();
+                    App.updateCartBadge();
+                    
+                    // Update views if open
+                    if(document.getElementById('cart-sidebar').classList.contains('open')) {
+                        App.renderCartItems();
+                    }
+                    if(document.getElementById('checkout-modal').classList.contains('open')) {
+                        App.renderCheckoutCart();
+                        if(State.cart.length === 0) App.closeModal('checkout-modal');
+                    }
+                }
+            },
+
+            removeItem: (id) => {
+                State.cart = State.cart.filter(i => i.id !== id);
+                App.saveCart();
+                App.updateCartBadge();
+                if(document.getElementById('checkout-modal').classList.contains('open')) {
+                    App.renderCheckoutCart();
+                    if(State.cart.length === 0) App.closeModal('checkout-modal');
+                }
+            },
+
+            saveCart: () => {
+                localStorage.setItem('samurai_cart', JSON.stringify(State.cart));
+            },
+
+            updateCartBadge: () => {
+                const badge = document.getElementById('cart-badge');
+                const totalItems = State.cart.reduce((sum, item) => sum + item.qty, 0);
+                if (totalItems > 0) {
+                    badge.textContent = totalItems;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            },
+
+            renderCartItems: () => {
+                const container = document.getElementById('cart-items');
+                const totalEl = document.getElementById('cart-total');
+                const btnCheckout = document.getElementById('btn-checkout');
+                
+                if (State.cart.length === 0) {
+                    container.innerHTML = `<div class="text-center text-gray-400 mt-10"><i class="fas fa-shopping-basket text-5xl mb-4"></i><p class="text-lg">سلتك فارغة.</p></div>`;
+                    totalEl.textContent = `0 ${SITE_CONFIG.currency}`;
+                    btnCheckout.disabled = true;
+                    return;
+                }
+
+                btnCheckout.disabled = false;
+                let total = 0;
+                let html = '';
+                const imgErrorStr = `this.onerror=null; this.src='${SITE_CONFIG.imgPlaceholder}'`;
+
+                State.cart.forEach(item => {
+                    const itemTotal = item.price * item.qty;
+                    total += itemTotal;
+                    html += `
+                        <div class="flex gap-3 bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                            <div class="w-16 h-16 bg-gray-50 rounded border border-gray-100 flex-shrink-0 flex items-center justify-center p-1">
+                                <img src="${item.image}" class="max-h-full object-contain mix-blend-multiply" onerror="${imgErrorStr}">
+                            </div>
+                            <div class="flex-grow flex flex-col justify-between">
+                                <h4 class="text-gray-900 text-sm font-bold line-clamp-1 font-en" dir="ltr">${item.name}</h4>
+                                <div class="flex justify-between items-center mt-2">
+                                    <div class="flex items-center bg-gray-50 rounded border border-gray-200">
+                                        <button onclick="App.updateQty(${item.id}, 1)" class="px-2 py-1 text-gray-500 hover:text-samurai-gold">+</button>
+                                        <span class="px-2 text-sm text-gray-800 font-bold">${item.qty}</span>
+                                        <button onclick="App.updateQty(${item.id}, -1)" class="px-2 py-1 text-gray-500 hover:text-samurai-gold">-</button>
+                                    </div>
+                                    <span class="text-samurai-gold font-bold text-sm font-en">${itemTotal.toLocaleString()} ${SITE_CONFIG.currency}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+                totalEl.textContent = `${total.toLocaleString()} ${SITE_CONFIG.currency}`;
+            },
+
+            // --- Checkout Logic ---
+            openCheckout: () => {
+                if(State.cart.length === 0) return;
+                App.toggleCart(); 
+                
+                // Populate Wilayas
+                const wilayaSelect = document.getElementById('co-wilaya');
+                wilayaSelect.innerHTML = '<option value="">اختر الولاية...</option>' + 
+                    ALGERIA_DATA.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+                
+                App.renderCheckoutCart();
+                document.getElementById('checkout-modal').classList.add('open');
+            },
+
+            populateCommunes: () => {
+                const wilayaId = parseInt(document.getElementById('co-wilaya').value);
+                const communeSelect = document.getElementById('co-commune');
+                
+                if(!wilayaId) {
+                    communeSelect.innerHTML = '<option value="">اختر البلدية...</option>';
+                    communeSelect.disabled = true;
+                    return;
+                }
+
+                const wilaya = ALGERIA_DATA.find(w => w.id === wilayaId);
+                if(wilaya && wilaya.communes) {
+                    communeSelect.innerHTML = '<option value="">اختر البلدية...</option>' + 
+                        wilaya.communes.map(c => `<option value="${c}">${c}</option>`).join('');
+                    communeSelect.disabled = false;
+                }
+            },
+
+            renderCheckoutCart: () => {
+                const container = document.getElementById('checkout-cart-items');
+                let html = '';
+                const imgErrorStr = `this.onerror=null; this.src='${SITE_CONFIG.imgPlaceholder}'`;
+
+                State.cart.forEach(item => {
+                    const itemTotal = item.price * item.qty;
+                    html += `
+                        <div class="flex gap-3 bg-white p-3 rounded-lg border border-gray-200 shadow-sm relative">
+                            <button onclick="App.removeItem(${item.id})" class="absolute top-2 left-2 text-gray-300 hover:text-red-500 transition"><i class="fas fa-trash-alt"></i></button>
+                            <div class="w-16 h-16 bg-gray-50 rounded border border-gray-100 flex-shrink-0 flex items-center justify-center p-1">
+                                <img src="${item.image}" class="max-h-full object-contain mix-blend-multiply" onerror="${imgErrorStr}">
+                            </div>
+                            <div class="flex-grow flex flex-col justify-between pr-2">
+                                <h4 class="text-gray-900 text-sm font-bold line-clamp-1 font-en pl-6" dir="ltr">${item.name}</h4>
+                                <div class="flex justify-between items-center mt-2">
+                                    <span class="text-samurai-dark font-bold text-sm font-en">${itemTotal.toLocaleString()} ${SITE_CONFIG.currency}</span>
+                                    <div class="flex items-center bg-gray-50 rounded border border-gray-200" dir="ltr">
+                                        <button type="button" onclick="App.updateQty(${item.id}, -1)" class="px-2 py-1 text-gray-500 hover:text-samurai-gold">-</button>
+                                        <span class="px-2 text-sm text-gray-800 font-bold">${item.qty}</span>
+                                        <button type="button" onclick="App.updateQty(${item.id}, 1)" class="px-2 py-1 text-gray-500 hover:text-samurai-gold">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+                App.updateCheckoutTotals();
+            },
+
+            updateCheckoutTotals: () => {
+                const subtotal = State.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+                const deliveryType = document.querySelector('input[name="livraison"]:checked').value;
+                const deliveryCost = deliveryType === 'home' ? SITE_CONFIG.deliveryHome : SITE_CONFIG.deliveryDesk;
+                const finalTotal = subtotal + deliveryCost;
+
+                document.getElementById('checkout-subtotal').textContent = `${subtotal.toLocaleString()} ${SITE_CONFIG.currency}`;
+                document.getElementById('checkout-delivery-cost').textContent = `+${deliveryCost.toLocaleString()} ${SITE_CONFIG.currency}`;
+                document.getElementById('checkout-final-total').textContent = `${finalTotal.toLocaleString()} ${SITE_CONFIG.currency}`;
+            },
+
+            submitCheckout: (e) => {
+                e.preventDefault();
+                
+                // Gather Data
+                const nom = document.getElementById('co-nom').value.trim();
+                const prenom = document.getElementById('co-prenom').value.trim();
+                const tel = document.getElementById('co-tel').value.trim();
+                
+                const wilayaSelect = document.getElementById('co-wilaya');
+                const wilayaText = wilayaSelect.options[wilayaSelect.selectedIndex].text;
+                const commune = document.getElementById('co-commune').value;
+                const adresse = document.getElementById('co-adresse').value.trim();
+                
+                const deliveryTypeVal = document.querySelector('input[name="livraison"]:checked').value;
+                const deliveryText = deliveryTypeVal === 'home' ? 'توصيل للمنزل' : 'مكتب التوصيل (Stop Desk)';
+                const deliveryCost = deliveryTypeVal === 'home' ? SITE_CONFIG.deliveryHome : SITE_CONFIG.deliveryDesk;
+
+                // Calculate Totals
+                let subtotal = 0;
+                let itemsText = '';
+                State.cart.forEach(item => {
+                    const itemTotal = item.price * item.qty;
+                    subtotal += itemTotal;
+                    itemsText += `▪️ ${item.qty}x ${item.name} (${itemTotal.toLocaleString()} ${SITE_CONFIG.currency})\n`;
+                });
+                const finalTotal = subtotal + deliveryCost;
+
+                // Format WhatsApp Message (Arabic)
+                let msg = `*طلب جديد - SAMURAI NUTRITION* 🥋\n\n`;
+                msg += `*👤 العميل:* ${nom} ${prenom}\n`;
+                msg += `*📞 الهاتف:* ${tel}\n`;
+                msg += `*📍 الولاية:* ${wilayaText}\n`;
+                msg += `*🏙️ البلدية:* ${commune}\n`;
+                msg += `*🏠 العنوان:* ${adresse}\n`;
+                msg += `*📦 نوع التوصيل:* ${deliveryText}\n\n`;
+                msg += `*🛒 المنتجات:*\n${itemsText}\n`;
+                msg += `*💵 المجموع الفرعي:* ${subtotal.toLocaleString()} ${SITE_CONFIG.currency}\n`;
+                msg += `*🚚 تكلفة التوصيل:* ${deliveryCost.toLocaleString()} ${SITE_CONFIG.currency}\n`;
+                msg += `*💰 المجموع النهائي: ${finalTotal.toLocaleString()} ${SITE_CONFIG.currency}*\n`;
+                msg += `\nالرجاء تأكيد طلبي، شكراً.`;
+
+                // Redirect
+                const waUrl = `https://wa.me/${SITE_CONFIG.whatsapp}?text=${encodeURIComponent(msg)}`;
+                window.open(waUrl, '_blank');
+            }
+        };
+
+        // Initialize App on load
+        document.addEventListener('DOMContentLoaded', App.init);
+
+    </script>
+</body>
+</html>

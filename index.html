@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samurai Nutrition | مكملات رياضية</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+    <linlet DBk rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        samurai: {
+                            bg: '#0A1118', card: '#111A24', gold: '#C5A059', goldHover: '#A37B2C', border: '#1F2937'
+                        }
+                    },
+                    fontFamily: { heading: ['Cairo', 'sans-serif'], body: ['Cairo', 'sans-serif'], en: ['Oswald', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #0A1118; color: #E5E7EB; font-family: 'Cairo', sans-serif; overflow-x: hidden; }
+        .font-en { font-family: 'Oswald', sans-serif; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #111A24; }
+        ::-webkit-scrollbar-thumb { background: #4B5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #C5A059; }
+
+        .logo-samurai {
+            color: #2C5A71;
+            text-shadow: -1px -1px 0 #A37B2C, 1px -1px 0 #A37B2C, -1px 1px 0 #A37B2C, 1px 1px 0 #A37B2C, 0 0 6px rgba(163, 123, 44, 0.4);
+            letter-spacing: 0.1em;
+        }
+        .logo-nutrition {
+            background: linear-gradient(to bottom, #E5C773, #A37B2C);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            filter: drop-shadow(0 1px 2px rgba(163, 123, 44, 0.5)); letter-spacing: 0.15em;
+        }
+
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .slide-in-left { transform: translateX(-100%); transition: transform 0.3s ease-in-out; }
+        .slide-in-left.open { transform: translateX(0); }
+        .modal-overlay { opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .modal-overlay.open { opacity: 1; pointer-events: auto; }
+        .modal-content { transform: scale(0.95); transition: transform 0.3s ease; }
+        .modal-overlay.open .modal-content { transform: scale(1); }
+        .card-out-of-stock { opacity: 0.5; filter: grayscale(100%); }
+    </style>
+</head>
+<body class="antialiased flex flex-col min-h-screen">
+    <header class="sticky top-0 w-full z-40 bg-samurai-bg/95 backdrop-blur-md border-b border-samurai-border shadow-xl h-24">
+        <div class="max-w-7xl mx-auto px-4 h-full flex justify-between items-center relative">
+            <div class="z-20 relative flex items-center">
+                <button onclick="App.toggleSearch()" class="w-12 h-12 flex items-center justify-center bg-samurai-card border border-samurai-border rounded-lg text-gray-300 hover:text-samurai-gold hover:border-samurai-gold transition shadow-sm">
+                    <i class="fas fa-search text-xl"></i>
+                </button>
+                <input type="text" id="search-input" onkeyup="App.handleSearch(this.value)" class="hidden absolute right-14 w-48 sm:w-64 bg-samurai-card border border-samurai-border rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-samurai-gold transition-all shadow-2xl" placeholder="ابحث عن منتج...">
+                <div id="search-results" class="hidden absolute top-full mt-2 right-0 w-64 sm:w-80 bg-samurai-card shadow-2xl rounded-lg border border-samurai-border overflow-hidden z-50 max-h-80 overflow-y-auto"></div>
+            </div>
+
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                <div class="pointer-events-auto cursor-pointer flex flex-col items-center mt-2" onclick="App.goHome()">
+                    <img src="images/logo.png" alt="Samurai Nutrition Logo" class="h-12 sm:h-14 w-auto object-contain drop-shadow-lg mb-1" onerror="this.style.display='none'">
+                    <h1 class="flex flex-col items-center leading-none font-en font-bold uppercase text-center">
+                        <span class="logo-samurai text-xl sm:text-2xl">SAMURAI</span>
+                        <span class="logo-nutrition text-sm sm:text-md">NUTRITION</span>
+                    </h1>
+                </div>
+            </div>
+
+            <div class="z-20">
+                <button onclick="App.toggleCart()" class="flex items-center gap-3 bg-samurai-card border border-samurai-border px-4 py-2.5 rounded-lg hover:border-samurai-gold hover:text-samurai-gold transition-colors relative shadow-sm group">
+                    <span id="nav-cart-total" class="font-en font-bold text-gray-200 text-sm sm:text-lg tracking-wide group-hover:text-samurai-gold transition">0 DA</span>
+                    <i class="fas fa-shopping-cart text-gray-300 text-xl group-hover:text-samurai-gold transition"></i>
+                    <span id="cart-badge" class="absolute -top-2 -left-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full hidden shadow-md border-2 border-samurai-bg">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+    <main class="flex-grow pb-12">
+        <div id="hero-section" class="relative w-full h-56 sm:h-80 overflow-hidden border-b border-samurai-border shadow-2xl">
+            <img src="images/hero.jpg" alt="Hero Background" class="w-full h-full object-cover">
+        </div>
+
+        <div id="nav-controls" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 hidden">
+            <button onclick="App.goHome()" class="flex items-center gap-2 text-gray-400 hover:text-samurai-gold transition bg-samurai-card px-4 py-2 rounded-lg border border-samurai-border">
+                <i class="fas fa-arrow-right"></i> <span>العودة للأقسام</span>
+            </button>
+        </div>
+
+        <div id="app-container" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8"></div>
+    </main>
+    <footer class="bg-samurai-card border-t border-samurai-border py-10 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <h3 class="font-en font-bold uppercase mb-4 flex justify-center gap-2 text-2xl">
+                <span class="text-[#2C5A71]">SAMURAI</span> <span class="text-samurai-gold">NUTRITION</span>
+            </h3>
+            <div class="flex justify-center space-x-6 space-x-reverse mb-6">
+                <a href="#" id="footer-fb" target="_blank" class="text-gray-400 hover:text-[#1877F2] text-3xl transition"><i class="fab fa-facebook"></i></a>
+                <a href="#" id="footer-ig" target="_blank" class="text-gray-400 hover:text-[#E1306C] text-3xl transition"><i class="fab fa-instagram"></i></a>
+                <a href="#" id="footer-wa" target="_blank" class="text-gray-400 hover:text-[#25D366] text-3xl transition"><i class="fab fa-whatsapp"></i></a>
+            </div>
+            <p class="text-gray-500 text-sm mt-2">&copy; <span id="year"></span> Samurai Nutrition. جميع الحقوق محفوظة.</p>
+            <p class="text-gray-600 text-xs mt-1 font-en">Developed by: <a href="https://wa.me/qr/EG66HXE3DCYMP1" target="_blank" class="text-samurai-gold hover:text-samurai-goldHover hover:underline transition font-bold">R.ABDELMALEK</a></p>
+        </div>
+    </footer>
+    <div id="cart-sidebar" class="fixed inset-y-0 left-0 w-full sm:w-96 bg-samurai-card z-50 slide-in-left shadow-2xl border-r border-samurai-border flex flex-col">
+        <div class="p-5 border-b border-samurai-border flex justify-between items-center">
+            <h2 class="text-xl font-bold text-white"><i class="fas fa-shopping-bag text-samurai-gold ml-2"></i> السلة</h2>
+            <button onclick="App.toggleCart()" class="text-gray-400 hover:text-red-500 text-2xl"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="cart-items" class="flex-grow overflow-y-auto p-4 space-y-4 bg-samurai-bg"></div>
+        <div class="p-5 border-t border-samurai-border bg-samurai-card">
+            <button onclick="App.openCheckout()" id="btn-checkout" class="w-full bg-samurai-gold text-white font-bold py-3 rounded-lg hover:bg-samurai-goldHover transition shadow-lg text-lg">
+                إتمام الطلب
+            </button>
+        </div>
+    </div>
+
+    <div id="product-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-overlay bg-black/80 backdrop-blur-sm p-4">
+        <div class="bg-samurai-card rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto modal-content shadow-2xl flex flex-col md:flex-row relative border border-samurai-border">
+            <button onclick="App.closeModal('product-modal')" class="absolute top-4 left-4 text-gray-400 hover:text-red-500 z-10 bg-samurai-bg rounded-full w-10 h-10 flex items-center justify-center"><i class="fas fa-times"></i></button>
+            <div class="w-full md:w-1/2 bg-samurai-bg p-8 flex items-center justify-center min-h-[300px] border-b md:border-b-0 md:border-l border-samurai-border">
+                <div id="modal-img-container" class="w-full h-full flex items-center justify-center"></div>
+            </div>
+            <div class="w-full md:w-1/2 p-6 md:p-10 flex flex-col justify-center">
+                <div id="modal-badge" class="mb-4"></div>
+                <h2 id="modal-title" class="text-2xl font-bold text-white mb-2 font-en" dir="ltr"></h2>
+                <p id="modal-subcat" class="text-samurai-gold text-sm font-bold uppercase mb-4 font-en"></p>
+                <p id="modal-price" class="text-3xl font-bold text-white mb-6 font-en"></p>
+                
+                <div class="mb-8 bg-samurai-bg p-4 rounded-lg border border-samurai-border">
+                    <h4 class="text-white font-bold mb-2"><i class="fas fa-info-circle text-samurai-gold ml-1"></i> الوصف</h4>
+                    <p class="text-gray-400 text-sm leading-relaxed">تركيبة متطورة مصممة لزيادة نتائجك إلى أقصى حد. جودة ممتازة مضمونة من Samurai Nutrition.</p>
+                </div>
+
+                <button id="modal-add-btn" class="w-full bg-samurai-gold text-white font-bold py-4 rounded-lg hover:bg-samurai-goldHover transition shadow-lg flex items-center justify-center gap-3 text-lg">
+                    <i class="fas fa-cart-plus"></i> أضف للسلة
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="checkout-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-overlay bg-black/80 backdrop-blur-sm p-4">
+        <div class="bg-samurai-card rounded-2xl max-w-5xl w-full max-h-[95vh] overflow-y-auto modal-content shadow-2xl relative border border-samurai-border p-6 md:p-8">
+            <button onclick="App.closeModal('checkout-modal')" class="absolute top-4 left-4 text-gray-400 hover:text-red-500"><i class="fas fa-times text-2xl"></i></button>
+            <h2 class="text-3xl font-bold text-white mb-6 border-b border-samurai-border pb-4">إتمام الطلب</h2>
+            <form id="checkout-form" onsubmit="App.submitCheckout(event)" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-7 space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="text" id="co-nom" required placeholder="اللقب *" class="w-full bg-samurai-bg border border-samurai-border rounded-lg px-4 py-3 text-white focus:border-samurai-gold outline-none">
+                        <input type="text" id="co-prenom" required placeholder="الاسم *" class="w-full bg-samurai-bg border border-samurai-border rounded-lg px-4 py-3 text-white focus:border-samurai-gold outline-none">
+                    </div>
+                    <input type="tel" id="co-tel" required placeholder="رقم الهاتف *" dir="ltr" class="w-full bg-samurai-bg border border-samurai-border rounded-lg px-4 py-3 text-white focus:border-samurai-gold outline-none text-right">
+                    <div class="grid grid-cols-2 gap-4">
+                        <select id="co-wilaya" required onchange="App.populateCommunes()" class="w-full bg-samurai-bg border border-samurai-border rounded-lg px-4 py-3 text-white focus:border-samurai-gold outline-none"><option value="">الولاية...</option></select>
+                        <select id="co-commune" required class="w-full bg-samurai-bg border border-samurai-border rounded-lg px-4 py-3 text-white focus:border-samurai-gold outline-none"><option value="">البلدية...</option></select>
+                    </div>
+                    <textarea id="co-adresse" required placeholder="العنوان الكامل *" rows="2" class="w-full bg-samurai-bg border border-samurai-border rounded-lg px-4 py-3 text-white focus:border-samurai-gold outline-none"></textarea>
+                    <div class="flex gap-4">
+                        <label class="flex-1 flex items-center bg-samurai-bg p-3 rounded-lg border border-samurai-border cursor-pointer hover:border-samurai-gold">
+                            <input type="radio" name="livraison" value="home" checked onchange="App.updateCheckoutTotals()" class="w-4 h-4 text-samurai-gold border-gray-600">
+                            <span class="mr-2 text-white text-sm">توصيل للمنزل</span>
+                        </label>
+                        <label class="flex-1 flex items-center bg-samurai-bg p-3 rounded-lg border border-samurai-border cursor-pointer hover:border-samurai-gold">
+                            <input type="radio" name="livraison" value="desk" onchange="App.updateCheckoutTotals()" class="w-4 h-4 text-samurai-gold border-gray-600">
+                            <span class="mr-2 text-white text-sm">مكتب (Stop Desk)</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="lg:col-span-5 bg-samurai-bg p-6 rounded-xl border border-samurai-border flex flex-col h-full">
+                    <h3 class="text-xl font-bold text-white mb-4 border-b border-samurai-border pb-2">تفاصيل طلبك</h3>
+                    <div id="checkout-cart-items" class="flex-grow overflow-y-auto space-y-3 mb-6 max-h-64 pr-2"></div>
+                    <div class="border-t border-samurai-border pt-4 space-y-3">
+                        <div class="flex justify-between text-gray-400"><span>المجموع الفرعي:</span> <span id="co-subtotal" class="font-en text-white">0 DA</span></div>
+                        <div class="flex justify-between text-gray-400"><span>التوصيل:</span> <span id="co-delivery" class="font-en text-green-400">+0 DA</span></div>
+                        <div class="flex justify-between text-xl font-bold text-white border-t border-samurai-border pt-2"><span>المجموع النهائي:</span> <span id="co-total" class="font-en text-samurai-gold">0 DA</span></div>
+                    </div>
+                    <button type="submit" class="w-full bg-[#25D366] text-white font-bold py-4 rounded-lg hover:bg-[#128C7E] transition shadow-lg flex justify-center items-center gap-2 text-lg mt-6">
+                        <i class="fab fa-whatsapp text-2xl"></i> أرسل الطلب
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+        const CONFIG = {
+            whatsapp: "213779186128",
+            facebook: "https://www.facebook.com/profile.php?id=100063894531867",
+            instagram: "https://www.instagram.com/haidar_samuraijr?igsh=dmRxYzlqaGxmNjB2",
+            currency: "DA",
+            imgPlaceholder: "https://placehold.co/400x400/111A24/C5A059?text=SAMURAI",
+            deliveryHome: 600,
+            deliveryDesk: 400,
+            googleSheetsAPI: "" 
+        };
+
+        const ALGERIA_DATA = [
+            { id: 1, name: "01 - أدرار", communes: ["أدرار", "تمنطيط", "رقان"] },
+            { id: 2, name: "02 - الشلف", communes: ["الشلف", "تنس", "بوقادير"] },
+            { id: 9, name: "09 - البليدة", communes: ["البليدة", "بوفاريك", "موزاية"] },
+            { id: 16, name: "16 - الجزائر", communes: ["الجزائر الوسطى", "سيدي امحمد", "رويبة", "الشراقة"] },
+            { id: 31, name: "31 - وهران", communes: ["وهران", "بئر الجير", "أرزيو"] }
+        ];
+        const wilayaNames = ["الأغواط","أم البواقي","باتنة","بجاية","بسكرة","بشار","البويرة","تمنراست","تبسة","تلمسان","تيارت","تيزي وزو","الجلفة","جيجل","سطيف","سعيدة","سكيكدة","سيدي بلعباس","عنابة","قالمة","المدية","مستغانم","المسيلة","معسكر","ورقلة","البيض","إليزي","برج بوعريريج","بومرداس","الطارف","تندوف","تيسمسيلت","الوادي","خنشلة","سوق أهراس","تيبازة","ميلة","عين الدفلى","النعامة","عين تموشنت","غرداية","غليزان","تيميمون","برج باجي مختار","أولاد جلال","بني عباس","إن صالح","إن قزام","تقرت","جانت","المغير","المنيعة"];
+        for(let i=1; i<=58; i++) {
+            if(!ALGERIA_DATA.find(w => w.id === i)) {
+                let wName = wilayaNames.shift() || `ولاية ${i}`;
+                let prefix = i < 10 ? `0${i}` : i;
+                ALGERIA_DATA.push({ id: i, name: `${prefix} - ${wName}`, communes: [`بلدية ${wName}`] });
+            }
+        }
+        ALGERIA_DATA.sort((a, b) => a.id - b.id);
+
+                let DB = {
+            categories: [
+                { id: 'packs', name: 'باقات (Packs)', image: 'images/cat-packs.jpg' },
+                { id: 'proteins', name: 'بروتينات', image: 'images/cat-proteins.jpg' },
+                { id: 'mass_gainers', name: 'ضخامة (Gainers)', image: 'images/cat-gainers.jpg' },
+                { id: 'creatines', name: 'كرياتين', image: 'images/cat-creatines.jpg' },
+                { id: 'pre_workout', name: 'طاقة (Pre-Workout)', image: 'images/cat-pre.jpg' },
+                { id: 'vitamins', name: 'فيتامينات', image: 'images/cat-vitamins.jpg' },
+                { id: 'fat_burner', name: 'حوارق الدهون', image: 'images/cat-fatburner.jpg' },
+                { id: 'boosters', name: 'محفزات', image: 'images/cat-boosters.jpg' },
+                { id: 'collagen', name: 'كولاجين', image: 'images/cat-collagen.jpg' },
+                { id: 'amino', name: 'أحماض أمينية', image: 'images/cat-amino.jpg' },
+                { id: 'drinks', name: 'مشروبات', image: 'images/cat-drinks.jpg' }
+            ],
+            subCategories: {
+                'proteins': ['Whey Isolate', 'Whey Hydro', 'Whey Concentrate', 'Casein']
+            },
+            products: [
+                { id: 101, catId: 'proteins', subCat: 'Whey Isolate', name: 'Samurai Isolate 100% 2kg', price: 16500, image: 'images/iso.jpg', stock: 'in_stock' },
+                { id: 102, catId: 'proteins', subCat: 'Whey Hydro', name: 'Hydrolyzed Gold 1.5kg', price: 18000, image: 'images/hydro.jpg', stock: 'in_stock' },
+                { id: 103, catId: 'proteins', subCat: 'Whey Concentrate', name: 'Basic Whey 2kg', price: 12000, image: 'images/whey.jpg', stock: 'out_of_stock' },
+                { id: 201, catId: 'creatines', name: 'Creatine Monohydrate 300g', price: 4500, image: 'images/crea.jpg', stock: 'in_stock' },
+                { id: 301, catId: 'pre_workout', name: 'Katana Pre-Workout 30 serv', price: 6500, image: 'images/pre.jpg', stock: 'in_stock' },
+                { id: 401, catId: 'mass_gainers', name: 'Sumo Mass Gainer 5kg', price: 14000, image: 'images/gainer.jpg', stock: 'in_stock' }
+            ]
+        };
+
+
+        const State = {
+            cart: JSON.parse(localStorage.getItem('samurai_cart')) || [],
+            currentCategory: null,
+            filters: { subCat: 'all', price: 'all' }
+        };
+
+        const App = {
+            init: async () => {
+                document.getElementById('year').textContent = new Date().getFullYear();
+                document.getElementById('footer-fb').href = CONFIG.facebook;
+                document.getElementById('footer-ig').href = CONFIG.instagram;
+                document.getElementById('footer-wa').href = `https://wa.me/${CONFIG.whatsapp}`;
+                App.updateCartUI();
+                await App.fetchDataFromSheets();
+                App.renderHome();
+                document.addEventListener('click', (e) => {
+                    if(!e.target.closest('#search-input') && !e.target.closest('button[onclick="App.toggleSearch()"]')) {
+                        document.getElementById('search-input').classList.add('hidden');
+                        document.getElementById('search-results').classList.add('hidden');
+                    }
+                });
+            },
+
+            fetchDataFromSheets: async () => {
+                if(!CONFIG.googleSheetsAPI) return; 
+                try {
+                    const res = await fetch(CONFIG.googleSheetsAPI);
+                    DB = await res.json();
+                } catch (e) { console.log("استخدام البيانات المحلية"); }
+            },
+
+            goHome: () => {
+                State.currentCategory = null;
+                document.getElementById('hero-section').style.display = 'block';
+                document.getElementById('nav-controls').classList.add('hidden');
+                App.renderHome();
+            },
+
+            renderHome: () => {
+                const container = document.getElementById('app-container');
+                let html = `<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">`;
+                DB.categories.forEach(cat => {
+                    html += `
+                    <div onclick="App.openCategory('${cat.id}')" class="relative w-full aspect-square rounded-xl overflow-hidden shadow-lg border border-samurai-border hover:border-samurai-gold transition-all cursor-pointer group fade-in">
+                        <img src="${cat.image}" onerror="this.src='${CONFIG.imgPlaceholder}'" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex items-end justify-center pb-6">
+                            <h3 class="text-xl font-bold text-white group-hover:text-samurai-gold transition">${cat.name}</h3>
+                        </div>
+                    </div>`;
+                });
+                container.innerHTML = html + `</div>`;
+            },
+
+            openCategory: (catId) => {
+                State.currentCategory = catId;
+                State.filters = { subCat: 'all', price: 'all' };
+                document.getElementById('hero-section').style.display = 'none';
+                document.getElementById('nav-controls').classList.remove('hidden');
+                
+                const category = DB.categories.find(c => c.id === catId);
+                const hasSubCats = DB.subCategories && DB.subCategories[catId] && DB.subCategories[catId].length > 0;
+                const container = document.getElementById('app-container');
+
+                let html = `
+                    <div class="flex flex-col md:flex-row gap-8 fade-in">
+                        <aside class="w-full md:w-64 flex-shrink-0">
+                            <div class="bg-samurai-card border border-samurai-border rounded-xl p-5 sticky top-28 shadow-sm">
+                                <h3 class="text-xl font-bold text-white mb-4 border-b border-samurai-border pb-2"><i class="fas fa-filter text-samurai-gold ml-2"></i> تصفية</h3>
+                                ${hasSubCats ? `
+                                <div class="mb-6">
+                                    <h4 class="text-gray-300 font-bold mb-3 text-sm">الفئات الفرعية</h4>
+                                    <div class="space-y-2">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="subcat" value="all" checked onchange="App.updateFilter('subCat', 'all')" class="w-4 h-4 text-samurai-gold bg-samurai-bg border-gray-600">
+                                            <span class="mr-2 text-gray-400 text-sm font-en">الكل</span>
+                                        </label>
+                                        ${DB.subCategories[catId].map(sub => `
+                                            <label class="flex items-center cursor-pointer">
+                                                <input type="radio" name="subcat" value="${sub}" onchange="App.updateFilter('subCat', '${sub}')" class="w-4 h-4 text-samurai-gold bg-samurai-bg border-gray-600">
+                                                <span class="mr-2 text-gray-400 text-sm font-en">${sub}</span>
+                                            </label>
+                                        `).join('')}
+                                    </div>
+                                </div>` : ''}
+                                <div>
+                                    <h4 class="text-gray-300 font-bold mb-3 text-sm">السعر (${CONFIG.currency})</h4>
+                                    <div class="space-y-2">
+                                        <label class="flex items-center cursor-pointer"><input type="radio" name="price" value="all" checked onchange="App.updateFilter('price', 'all')" class="w-4 h-4 text-samurai-gold bg-samurai-bg border-gray-600"><span class="mr-2 text-gray-400 text-sm">الكل</span></label>
+                                        <label class="flex items-center cursor-pointer"><input type="radio" name="price" value="0-5000" onchange="App.updateFilter('price', '0-5000')" class="w-4 h-4 text-samurai-gold bg-samurai-bg border-gray-600"><span class="mr-2 text-gray-400 text-sm font-en">0 - 5,000</span></label>
+                                        <label class="flex items-center cursor-pointer"><input type="radio" name="price" value="5000-10000" onchange="App.updateFilter('price', '5000-10000')" class="w-4 h-4 text-samurai-gold bg-samurai-bg border-gray-600"><span class="mr-2 text-gray-400 text-sm font-en">5,000 - 10,000</span></label>
+                                        <label class="flex items-center cursor-pointer"><input type="radio" name="price" value="10000-20000" onchange="App.updateFilter('price', '10000-20000')" class="w-4 h-4 text-samurai-gold bg-samurai-bg border-gray-600"><span class="mr-2 text-gray-400 text-sm font-en">10,000 - 20,000</span></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </aside>
+                        <div class="flex-grow">
+                            <h2 class="text-3xl font-bold text-white mb-6 border-b border-samurai-border pb-3">${category.name}</h2>
+                            <div id="product-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"></div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML = html;
+                App.renderProducts();
+            },
+
+            updateFilter: (type, value) => {
+                State.filters[type] = value;
+                App.renderProducts();
+            },
+
+            renderProducts: () => {
+                const grid = document.getElementById('product-grid');
+                grid.innerHTML = `<div class="col-span-full h-32 skeleton rounded-xl"></div>`;
+                setTimeout(() => {
+                    let products = DB.products.filter(p => p.catId === State.currentCategory);
+                    if (State.filters.subCat !== 'all') products = products.filter(p => p.subCat === State.filters.subCat);
+                    if (State.filters.price !== 'all') {
+                        products = products.filter(p => {
+                            if (State.filters.price === '0-5000') return p.price <= 5000;
+                            if (State.filters.price === '5000-10000') return p.price > 5000 && p.price <= 10000;
+                            if (State.filters.price === '10000-20000') return p.price > 10000 && p.price <= 20000;
+                            return true;
+                        });
+                    }
+                    if (products.length === 0) {
+                        grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500">لا توجد منتجات تطابق بحثك.</div>`;
+                        return;
+                    }
+                    grid.innerHTML = products.map(p => {
+                        let btn = p.stock === 'in_stock' ? 
+                            `<button onclick="App.addToCart(${p.id}, event)" class="w-full bg-samurai-gold text-white font-bold py-2 mt-3 rounded hover:bg-samurai-goldHover transition">أضف للسلة</button>` :
+                            `<button disabled class="w-full bg-samurai-border text-gray-500 py-2 mt-3 rounded cursor-not-allowed">نفد</button>`;
+                        return `
+                        <div class="bg-samurai-card border border-samurai-border rounded-xl p-4 flex flex-col hover:border-samurai-gold/50 cursor-pointer fade-in" onclick="App.openProductModal(${p.id})">
+                            <div class="h-40 flex items-center justify-center bg-white/5 rounded-lg mb-4">
+                                <img src="${p.image}" onerror="this.src='${CONFIG.imgPlaceholder}'" class="max-h-full object-contain drop-shadow-lg">
+                            </div>
+                            ${p.subCat ? `<p class="text-samurai-gold text-xs font-bold uppercase mb-1 font-en">${p.subCat}</p>` : ''}
+                            <h3 class="text-white font-bold text-sm line-clamp-2 font-en" dir="ltr">${p.name}</h3>
+                            <p class="text-samurai-gold font-bold text-lg mt-auto font-en">${p.price.toLocaleString()} ${CONFIG.currency}</p>
+                            <div onclick="event.stopPropagation()">${btn}</div>
+                        </div>`;
+                    }).join('');
+                }, 200);
+            },
+
+            toggleSearch: () => {
+                const inp = document.getElementById('search-input');
+                inp.classList.toggle('hidden');
+                if(!inp.classList.contains('hidden')) inp.focus();
+            },
+            
+            handleSearch: (q) => {
+                const resDiv = document.getElementById('search-results');
+                if(q.length < 2) { resDiv.classList.add('hidden'); return; }
+                const results = DB.products.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
+                if(results.length===0){ resDiv.innerHTML='<div class="p-3 text-gray-500 text-sm">لا نتائج</div>'; }
+                else {
+                    resDiv.innerHTML = results.map(p => `
+                    <div class="p-3 border-b border-samurai-border hover:bg-samurai-bg cursor-pointer flex gap-3" onclick="App.openProductModal(${p.id})">
+                        <img src="${p.image}" class="w-10 h-10 object-contain bg-white/5 rounded">
+                        <div class="text-sm text-white font-en">${p.name}</div>
+                    </div>`).join('');
+                }
+                resDiv.classList.remove('hidden');
+            },
+
+            addToCart: (id, e) => {
+                if(e) e.stopPropagation();
+                const p = DB.products.find(x => x.id === id);
+                if(!p || p.stock !== 'in_stock') return;
+                const item = State.cart.find(x => x.id === id);
+                if(item) item.qty++; else State.cart.push({...p, qty: 1});
+                App.saveCart(); App.updateCartUI();
+                const badge = document.getElementById('cart-badge');
+                badge.classList.add('scale-150'); setTimeout(() => badge.classList.remove('scale-150'), 200);
+            },
+
+            updateQty: (id, d) => {
+                const item = State.cart.find(x => x.id === id);
+                if(item) {
+                    item.qty += d;
+                    if(item.qty <= 0) State.cart = State.cart.filter(x => x.id !== id);
+                    App.saveCart(); App.updateCartUI();
+                    if(document.getElementById('cart-sidebar').classList.contains('open')) App.renderCartItems();
+                    if(document.getElementById('checkout-modal').classList.contains('open')) {
+                        App.renderCheckoutCart(); if(State.cart.length === 0) App.closeModal('checkout-modal');
+                    }
+                }
+            },
+
+            removeItem: (id) => {
+                State.cart = State.cart.filter(i => i.id !== id);
+                App.saveCart(); App.updateCartUI();
+                if(document.getElementById('checkout-modal').classList.contains('open')) {
+                    App.renderCheckoutCart(); if(State.cart.length === 0) App.closeModal('checkout-modal');
+                }
+            },
+
+            saveCart: () => localStorage.setItem('samurai_cart', JSON.stringify(State.cart)),
+            
+            updateCartUI: () => {
+                const totalItems = State.cart.reduce((s, i) => s + i.qty, 0);
+                const totalPrice = State.cart.reduce((s, i) => s + (i.price * i.qty), 0);
+                const badge = document.getElementById('cart-badge');
+                if(totalItems > 0) { badge.textContent = totalItems; badge.classList.remove('hidden'); }
+                else badge.classList.add('hidden');
+                document.getElementById('nav-cart-total').textContent = `${totalPrice.toLocaleString()} ${CONFIG.currency}`;
+            },
+
+            toggleCart: () => {
+                document.getElementById('cart-sidebar').classList.toggle('open');
+                App.renderCartItems();
+            },
+
+            renderCartItems: () => {
+                const container = document.getElementById('cart-items');
+                if(State.cart.length === 0) {
+                    container.innerHTML = '<div class="text-center text-gray-500 mt-10">سلتك فارغة</div>';
+                    document.getElementById('btn-checkout').disabled = true;
+                    return;
+                }
+                document.getElementById('btn-checkout').disabled = false;
+                container.innerHTML = State.cart.map(item => `
+                    <div class="flex gap-3 bg-samurai-card p-3 rounded-lg border border-samurai-border">
+                        <img src="${item.image}" class="w-16 h-16 object-contain bg-white/5 rounded">
+                        <div class="flex-grow flex flex-col justify-between">
+                            <h4 class="text-white text-sm font-en" dir="ltr">${item.name}</h4>
+                            <div class="flex justify-between items-center mt-2">
+                                <div class="flex items-center bg-samurai-bg rounded border border-samurai-border" dir="ltr">
+                                    <button onclick="App.updateQty(${item.id}, -1)" class="px-2 text-gray-400">-</button>
+                                    <span class="px-2 text-white">${item.qty}</span>
+                                    <button onclick="App.updateQty(${item.id}, 1)" class="px-2 text-gray-400">+</button>
+                                </div>
+                                <span class="text-samurai-gold font-en">${(item.price * item.qty).toLocaleString()}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            },
+
+            openProductModal: (id) => {
+                const p = DB.products.find(x => x.id === id);
+                if(!p) return;
+                document.getElementById('modal-img-container').innerHTML = `<img src="${p.image}" class="max-h-72 object-contain drop-shadow-2xl">`;
+                document.getElementById('modal-title').textContent = p.name;
+                document.getElementById('modal-subcat').textContent = p.subCat || '';
+                document.getElementById('modal-price').textContent = `${p.price.toLocaleString
